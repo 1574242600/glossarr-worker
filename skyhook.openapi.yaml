@@ -1,0 +1,267 @@
+openapi: 3.0.3
+info:
+  title: Sonarr Skyhook API
+  description: >-
+    Unofficial OpenAPI description of the Sonarr Skyhook TVDB metadata service
+    (https://skyhook.sonarr.tv/v1/tvdb/), derived from the Sonarr source code
+    (src/NzbDrone.Common/Cloud/SonarrCloudRequestBuilder.cs and
+    src/NzbDrone.Core/MetadataSource/SkyHook/SkyHookProxy.cs).
+
+    All requests are HTTP GET, return JSON, and share the URL template
+    /v1/tvdb/{route}/{language}/. The {language} path segment is hardcoded to
+    "en" in Sonarr but is expressed as a parameter here. Requests are sent with
+    the Sonarr user-agent; no authentication is required.
+  version: 1.0.0
+servers:
+  - url: https://skyhook.sonarr.tv/v1/tvdb
+paths:
+  /shows/{language}/{tvdbId}:
+    get:
+      operationId: getShow
+      summary: Get full series details including episodes
+      description: >-
+        Fetches a complete series record (metadata, seasons, episodes, actors,
+        images, ratings) for a TVDB series id. Used by SkyHookProxy.GetSeriesInfo.
+
+        The response is parsed into ShowResource and mapped to the Sonarr Series
+        and Episode models. 404 responses are treated as "series not found".
+      parameters:
+        - name: language
+          in: path
+          required: true
+          description: Language code; Sonarr always sends "en".
+          schema:
+            type: string
+            default: en
+        - name: tvdbId
+          in: path
+          required: true
+          description: TheTVDB series id.
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Full series payload.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ShowResource"
+        "404":
+          description: Series does not exist (treated as SeriesNotFoundException).
+  /search/{language}:
+    get:
+      operationId: searchSeries
+      summary: Search for series
+      description: >-
+        Searches shows by free-text title or by an external id prefix.
+        Used by SkyHookProxy.SearchForNewSeries.
+
+        The search term is lowercased and trimmed before being sent. Sonarr
+        translates the following internal prefixes into a plain search term:
+        "imdb:{id}", "anilist:{id}", "mal:{id}", "tmdb:{id}". The prefixes
+        "tvdb:"/"tvdbid:" are handled locally via the /shows endpoint instead
+        of being sent to this endpoint.
+
+        Returns a list of shows. The payload uses the same ShowResource shape,
+        but episodes are typically not populated for search results.
+      parameters:
+        - name: language
+          in: path
+          required: true
+          description: Language code; Sonarr always sends "en".
+          schema:
+            type: string
+            default: en
+        - name: term
+          in: query
+          required: true
+          description: Lowercased, trimmed title or external id reference (imdb:, anilist:, mal:, tmdb:).
+          schema:
+            type: string
+          example: imdb:tt0903747
+      responses:
+        "200":
+          description: Matching series.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ShowResource"
+components:
+  schemas:
+    ShowResource:
+      type: object
+      description: A TV show. Serialized by the SkyHook Resource model; all fields are nullable unless marked required.
+      properties:
+        tvdbId:
+          type: integer
+          description: TheTVDB id.
+        title:
+          type: string
+          description: Canonical title.
+        overview:
+          type: string
+        slug:
+          type: string
+          description: URL/TVDB slug, mapped to Sonarr's titleSlug.
+        firstAired:
+          type: string
+          format: date
+          description: Format yyyy-MM-dd; parsed with invariant locale.
+        lastAired:
+          type: string
+          format: date
+        tvRageId:
+          type: integer
+          nullable: true
+        tvMazeId:
+          type: integer
+          nullable: true
+        tmdbId:
+          type: integer
+          nullable: true
+        malIds:
+          type: array
+          description: MyAnimeList ids.
+          items:
+            type: integer
+        aniListIds:
+          type: array
+          items:
+            type: integer
+        status:
+          type: string
+          enum: [continuing, upcoming, ended]
+        runtime:
+          type: integer
+          nullable: true
+          description: Runtime in minutes.
+        timeOfDay:
+          $ref: "#/components/schemas/TimeOfDayResource"
+        network:
+          type: string
+        originalLanguage:
+          type: string
+          description: ISO-639 language code; falls back to English when blank.
+        originalCountry:
+          type: string
+        contentRating:
+          type: string
+          description: e.g. "TV-MA"; uppercased by Sonarr.
+        rating:
+          $ref: "#/components/schemas/RatingResource"
+        genres:
+          type: array
+          items:
+            type: string
+        actors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ActorResource"
+        images:
+          type: array
+          description: Poster, banner, fanart and clearlogo artwork URLs.
+          items:
+            $ref: "#/components/schemas/ImageResource"
+        seasons:
+          type: array
+          items:
+            $ref: "#/components/schemas/SeasonResource"
+        episodes:
+          type: array
+          description: Present on /shows responses; typically empty on search results.
+          items:
+            $ref: "#/components/schemas/EpisodeResource"
+    SeasonResource:
+      type: object
+      properties:
+        seasonNumber:
+          type: integer
+        images:
+          type: array
+          items:
+            $ref: "#/components/schemas/ImageResource"
+    EpisodeResource:
+      type: object
+      properties:
+        tvdbId:
+          type: integer
+        seasonNumber:
+          type: integer
+        episodeNumber:
+          type: integer
+        absoluteEpisodeNumber:
+          type: integer
+          nullable: true
+        airedAfterSeasonNumber:
+          type: integer
+          nullable: true
+        airedBeforeSeasonNumber:
+          type: integer
+          nullable: true
+        airedBeforeEpisodeNumber:
+          type: integer
+          nullable: true
+        title:
+          type: string
+        airDate:
+          type: string
+          format: date
+        airDateUtc:
+          type: string
+          format: date-time
+          nullable: true
+        runtime:
+          type: integer
+        finaleType:
+          type: string
+          nullable: true
+        overview:
+          type: string
+        image:
+          type: string
+          format: uri
+          nullable: true
+          description: Screenshot URL.
+        rating:
+          $ref: "#/components/schemas/RatingResource"
+    ActorResource:
+      type: object
+      properties:
+        name:
+          type: string
+        character:
+          type: string
+        image:
+          type: string
+          format: uri
+          nullable: true
+    ImageResource:
+      type: object
+      properties:
+        coverType:
+          type: string
+          enum: [poster, banner, fanart, clearlogo]
+          description: Unknown values map to Sonarr's Unknown type.
+        url:
+          type: string
+          format: uri
+    TimeOfDayResource:
+      type: object
+      description: Air time; combined into HH:mm by Sonarr.
+      properties:
+        hours:
+          type: integer
+        minutes:
+          type: integer
+    RatingResource:
+      type: object
+      properties:
+        count:
+          type: integer
+          description: Vote count (Ratings.Votes).
+        value:
+          type: number
+          format: decimal
+          description: Rating 0-10 (Ratings.Value).

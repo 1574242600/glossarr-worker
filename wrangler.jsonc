@@ -1,0 +1,16 @@
+{
+	"name": "glossarr-worker",
+	"main": "src/index.ts",
+	"compatibility_date": "2026-08-01",
+	"kv_namespaces": [
+		{
+			"binding": "GLOSSARR",
+			"id": "<deploy: wrangler kv namespace create GLOSSARR>"
+		}
+	],
+	"vars": {
+		"SHOW_TITLE_MODE": "always",
+		"SHOW_OVERVIEW_MODE": "always",
+		"CACHE_TTL_SECONDS": "300"
+	}
+}

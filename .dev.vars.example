@@ -1,0 +1,2 @@
+# 复制为 .dev.vars 使用。TVDB_API_KEY 为机密变量。
+TVDB_API_KEY="your_tvdb_api_key"

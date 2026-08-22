@@ -1,0 +1,24 @@
+{
+  "name": "glossarr-worker",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Glossarr rewritten as a Cloudflare Worker: translates Sonarr Skyhook metadata via TVDB",
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "types": "wrangler types --include-runtime false"
+  },
+  "dependencies": {
+    "itty-router": "^5.0.24"
+  },
+  "devDependencies": {
+    "@cloudflare/vitest-pool-workers": "^0.22.0",
+    "@cloudflare/workers-types": "^5.20260822.1",
+    "typescript": "^7.0.2",
+    "vitest": "^4.1.11",
+    "wrangler": "^4.125.0"
+  }
+}
