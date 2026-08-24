@@ -56,7 +56,7 @@ function parseMode(value: string | undefined, fallback: TranslationMode): Transl
 
 export function getConfig(env: Env): Config {
   return {
-    showTitleMode: parseMode(env.SHOW_TITLE_MODE, 'native'),
+    showTitleMode: parseMode(env.SHOW_TITLE_MODE, 'always'),
     showOverviewMode: parseMode(env.SHOW_OVERVIEW_MODE, 'always'),
     cacheTtlSeconds: toPositiveInt(env.CACHE_TTL_SECONDS, DEFAULT_CACHE_TTL_SECONDS),
   };

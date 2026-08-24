@@ -63,10 +63,10 @@ function tvdbSeriesRoute(data: { originalLanguage?: string }): Route {
   };
 }
 
-async function run(path: string): Promise<Response> {
+async function run(path: string, overrides: Record<string, string> = {}): Promise<Response> {
   const request = new IncomingRequest(`http://example.com${path}`);
   const ctx = createExecutionContext();
-  const response = await worker.fetch(request, env, ctx);
+  const response = await worker.fetch(request, { ...env, ...overrides }, ctx);
   await waitOnExecutionContext(ctx);
   return response;
 }
@@ -102,7 +102,7 @@ describe('glossarr-worker smoke tests', () => {
     expect(res.status).toBe(400);
   });
 
-  it('shows/fra translates the overview (always) but keeps the title (native, eng show)', async () => {
+  it('shows/fra translates the title and overview (always mode)', async () => {
     const onLogin = vi.fn();
     mockFetch([
       { match: /skyhook\.sonarr\.tv\/v1\/tvdb\/shows\/en\/81189$/, handler: () => Response.json(SHOW) },
@@ -115,7 +115,7 @@ describe('glossarr-worker smoke tests', () => {
     const body = (await res.json()) as ShowResource;
 
     expect(res.status).toBe(200);
-    expect(body.title).toBe('Breaking Bad');
+    expect(body.title).toBe('Breaking Bad (FR)');
     expect(body.overview).toBe('Une vue d’ensemble en français.');
     expect(onLogin).toHaveBeenCalledTimes(1);
   });
@@ -128,11 +128,26 @@ describe('glossarr-worker smoke tests', () => {
       tvdbSeriesRoute({ originalLanguage: 'fra' }),
     ]);
 
-    const res = await run('/v1/tvdb/shows/fra/295231');
+    const res = await run('/v1/tvdb/shows/fra/295231', { SHOW_TITLE_MODE: 'native' });
     const body = (await res.json()) as ShowResource;
 
     expect(body.title).toBe('Titre en français');
     expect(body.overview).toBe('Résumé en français.');
+  });
+
+  it('shows/fra keeps the title of a non-native show under native mode', async () => {
+    mockFetch([
+      { match: /skyhook\.sonarr\.tv\/v1\/tvdb\/shows\/en\/81189$/, handler: () => Response.json(SHOW) },
+      tvdbLoginRoute(),
+      tvdbTranslationRoute('fra', { name: 'Breaking Bad (FR)', overview: 'Une vue d’ensemble en français.' }),
+      tvdbSeriesRoute({ originalLanguage: 'eng' }),
+    ]);
+
+    const res = await run('/v1/tvdb/shows/fra/81189', { SHOW_TITLE_MODE: 'native' });
+    const body = (await res.json()) as ShowResource;
+
+    expect(body.title).toBe('Breaking Bad');
+    expect(body.overview).toBe('Une vue d’ensemble en français.');
   });
 
   it('search/fra truncates skyhook results to 5 and translates each', async () => {
@@ -178,8 +193,8 @@ describe('glossarr-worker smoke tests', () => {
     expect(res.status).toBe(200);
     expect(await res.json()).toHaveLength(5);
   });
-
   it('forwards unknown /v1/tvdb routes transparently', async () => {
+
     mockFetch([
       { match: /skyhook\.sonarr\.tv\/v1\/tvdb\/other\/thing/, handler: () => new Response('passthrough body', { status: 201, headers: { 'content-type': 'text/plain' } }) },
     ]);

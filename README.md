@@ -37,7 +37,7 @@ Your worker is now live, e.g. `https://glossarr-worker.<your-account>.workers.de
 | Variable             | Default  | Description                                        |
 | -------------------- | -------- | -------------------------------------------------- |
 | `TVDB_API_KEY`       | —        | TVDB v4 API key (secret)                           |
-| `SHOW_TITLE_MODE`    | `native` | `always` \| `never` \| `native`                    |
+| `SHOW_TITLE_MODE`    | `always` | `always` \| `never` \| `native`                  |
 | `SHOW_OVERVIEW_MODE` | `always` | `always` \| `never` \| `native`                    |
 | `CACHE_TTL_SECONDS`  | `300`    | Cache TTL for Skyhook/TVDB upstream fetches (s)    |
 
