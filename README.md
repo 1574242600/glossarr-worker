@@ -24,6 +24,8 @@ Point Sonarr at this worker via the [SonarrPatcher](https://github.com/157424260
 - `LANGUAGE` env var (now a route param)
 - `PRIMARY/SECONDARY_TRANSLATION_SOURCE` (TVDB is the only source)
 
+**If a show is missing or has an incorrect translation, consider adding or fixing it on [TheTVDB](https://www.thetvdb.com/).**
+
 ## Getting started
 
 Deploy the worker to production with one click:
