@@ -193,6 +193,20 @@ describe('glossarr-worker smoke tests', () => {
     expect(res.status).toBe(200);
     expect(await res.json()).toHaveLength(5);
   });
+  it('sends a User-Agent on upstream fetches (Skyhook rejects UA-less requests)', async () => {
+    const handler = vi.fn((_url: RequestInfo | URL, _init?: RequestInit) => Response.json(SHOW));
+    mockFetch([
+      { match: /skyhook\.sonarr\.tv\/v1\/tvdb\/shows\/en\/81189$/, handler },
+    ]);
+
+    const res = await run('/v1/tvdb/shows/eng/81189');
+
+    expect(res.status).toBe(200);
+    expect(handler).toHaveBeenCalledTimes(1);
+    const headers = new Headers(handler.mock.calls[0][1]?.headers);
+    expect(headers.get('User-Agent')).toBeTruthy();
+  });
+
   it('forwards unknown /v1/tvdb routes transparently', async () => {
 
     mockFetch([
